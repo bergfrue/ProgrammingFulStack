@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spam Detection Form</title>
+</head>
+<body>
+
+<h1>Spam Message Submission</h1>
+<p>Enter a message below to check if it is spam. Additional optional info helps us analyze patterns.</p>
+
+<form action="spam_insert.php" method="GET">
+    <input type="text" name="testvalue" value="sample">
+
+  
+    <label>Message to Analyze:</label><br>
+    <textarea name="message" id="messageBox" placeholder="Enter your message here..." required></textarea> 
+ 
+
+    <br><br>
+
+    <!-- NEW: Live Spam Analysis Box (added for Dynamic JavaScript display) -->
+    <div id="analysisBox" 
+         style="margin-top:10px; padding:10px; border:1px solid #aaa; background:#f8f8f8;">
+        <strong>Live Spam Analysis:</strong><br><br>
+
+        Spam Score: 
+        <span id="spamScore">0.00</span> 
+        <!-- ADDED: score display updated dynamically -->
+
+        <br><br>
+
+        Prediction: 
+        <span id="spamLabel">—</span> 
+        <!-- ADDED: label (SPAM / NOT SPAM) dynamically calculated -->
+
+        <br><br>
+
+        Keywords Found: 
+        <span id="keywordList">None</span> 
+
+    </div>
+ 
+
+    <br><br>
+
+    
+    <label>Your Email (optional):</label><br>
+    <input type="email" id="email" name="email" placeholder="you@example.com" required>
+    <br><br>
+
+    
+    <label>Day of the Month:</label><br>
+    <input type="number" id="day" name="day" required>
+    <br><br>
+
+    
+    <label>Tag (for demonstration):</label><br>
+    <input type="text" name="testget" value="example">
+    <br><br>
+
+    <button type="button" id="classifyBtn">Check Spam</button>
+
+
+</form>
+
+<script>
+
+
+document.getElementById("email").addEventListener("input", function() {
+    this.setCustomValidity(this.validity.typeMismatch ? "Please enter a valid email address." : "");
+});
+
+
+document.getElementById("day").max = new Date().getDate();
+
+
+
+
+// SELECT TEXTAREA FOR LIVE TYPING
+const msgBox = document.getElementById("messageBox");   // ADDED: get textarea input
+const scoreEl = document.getElementById("spamScore");    // ADDED: score output span
+const labelEl = document.getElementById("spamLabel");    // ADDED: label output span
+const keywordEl = document.getElementById("keywordList"); // ADDED: keyword list span
+
+// SIMPLE SPAM KEYWORD MODEL (you may modify this)
+const weights = {                                       // ADDED: small spam model
+    "free": 1.5,
+    "winner": 2.0,
+    "gift": 1.3,
+    "click": 1.2,
+    "urgent": 1.4,
+    "money": 1.0,
+    "project": -0.5,     // negative score indicates “not spam”
+    "meeting": -0.7
+};
+
+// EVENT LISTENER FOR LIVE TYPING
+msgBox.addEventListener("input", () => {                 // ADDED: live dynamic update
+    const text = msgBox.value.toLowerCase();             // ADDED: convert input to lowercase
+    let score = 0;                                       // ADDED: numeric spam score
+    let found = [];                                      // ADDED: list of triggered features
+
+    // CHECK FOR KEYWORDS
+    for (const word in weights) {                        // ADDED: loop through weights
+        if (text.includes(word)) {                       // ADDED: detect keyword
+            score += weights[word];                      // ADDED: add weight to score
+            found.push(word);                            // ADDED: store matched word
+        }
+    }
+
+    // CONVERT RAW SCORE TO PROBABILITY USING LOGISTIC FUNCTION
+    const probability = 1 / (1 + Math.exp(-score));      // ADDED: probability formula
+
+    // UPDATE UI DYNAMICALLY
+    scoreEl.textContent = probability.toFixed(2);        // ADDED: update score display
+
+    // DECIDE LABEL
+    labelEl.textContent = probability >= 0.5 ? "SPAM" : "NOT SPAM"; // ADDED: classification label
+    labelEl.style.color = probability >= 0.5 ? "red" : "green";     // ADDED: color highlight
+
+    // UPDATE KEYWORD LIST
+    keywordEl.textContent = found.length ? found.join(", ") : "None";  // ADDED: keyword display
+});
+// ====================== END OF NEW DYNAMIC SPAM JS ======================
+
+</script>
+
+</body>
+</html>

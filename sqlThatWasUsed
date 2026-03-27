@@ -1,0 +1,5 @@
+CREATE TABLE spam_page4_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    text_for_display VARCHAR(255),
+    value VARCHAR(255)
+);

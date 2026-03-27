@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spam Detector – Video Demo</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .wrap { max-width: 800px; margin: 2rem auto; padding: 1rem; background: #fff; border-radius: 12px; }
+    video { width: 100%; height: auto; border-radius: 10px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>HTML5 Video: Spam Detector Walkthrough</h1>
+    <p>This video explains how the spam classifier works and shows a sample workflow.</p>
+
+    <video controls preload="metadata" poster="assets/logo.svg">
+      <!-- Use your local XAMPP-served file; same folder as this HTML page -->
+      <source src="demon.mp4" type="video/mp4" />
+      <!-- If you later add more formats, include them here (webm/ogg). -->
+      Your browser does not support HTML5 video.
+    </video>
+
+    <p style="margin-top:1rem;">
+      If the video doesn't play, confirm Apache is running and visit:
+      <code>http://localhost/MyRealSpamDetector1/video_spam.html</code>
+    </p>
+  </div>
+</body>
+</html>

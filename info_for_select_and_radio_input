@@ -1,0 +1,6 @@
+| item_name   | input_type | text_for_display    | option_value |
+| ----------- | ---------- | ------------------- | ------------ |
+| spam_reason | select     | Suspicious Keywords | keywords     |
+| spam_reason | select     | Phishing Attempt    | phishing     |
+| spam_reason | radio      | High Risk           | high         |
+| spam_reason | radio      | Low Risk            | low          |

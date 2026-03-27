@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spam Detector – Canvas Visualization</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #f4f4f4;
+      font-family: system-ui, Arial;
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 12px;
+      position: relative;
+      z-index: 1; /* content stays UNDER fireworks */
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .legend {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    /* ————— FIREWORKS ON TOP ————— */
+    #fireworks {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      pointer-events: none;
+      z-index: 9999; /* fireworks above everything */
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- FULL-SCREEN FIREWORKS OVERLAY -->
+  <canvas id="fireworks"></canvas>
+
+  <div class="wrap">
+    <h1>Canvas: Live Spam Score & Keywords</h1>
+    <p>Type a message. The gauge shows the predicted spamminess. Bars show which keywords were detected.</p>
+
+    <div class="row">
+      <div>
+        <label for="msg"><strong>Message:</strong></label>
+        <textarea id="msg" placeholder="enter message..."></textarea>
+
+        <div class="legend">
+          Weights: free(1.5), winner(2.0), gift(1.3), click(1.2), urgent(1.4), money(1.0), project(-0.5), meeting(-0.7)
+        </div>
+      </div>
+
+      <div>
+        <canvas id="gauge" width="420" height="240"></canvas>
+      </div>
+    </div>
+
+    <h2>Matched Keywords</h2>
+    <canvas id="bars" width="900" height="260"></canvas>
+  </div>
+
+  <script>
+    // -------------------------------------------------
+    // SPAM DETECTION MODEL
+    // -------------------------------------------------
+    const weights = {
+      "free": 1.5,
+      "winner": 2.0,
+      "gift": 1.3,
+      "click": 1.2,
+      "urgent": 1.4,
+      "money": 1.0,
+      "project": -0.5,
+      "meeting": -0.7
+    };
+
+    const msgEl = document.getElementById('msg');
+    const gauge = document.getElementById('gauge');
+    const bars = document.getElementById('bars');
+    const g = gauge.getContext('2d');
+    const b = bars.getContext('2d');
+
+    function scoreMessage(text) {
+      text = text.toLowerCase();
+      let score = 0;
+      const found = [];
+
+      for (const w in weights) {
+        if (text.includes(w)) {
+          score += weights[w];
+          found.push(w);
+        }
+      }
+
+      const prob = 1 / (1 + Math.exp(-score));
+      return { prob, found };
+    }
+
+    // -------------------------------------------------
+    // GAUGE DRAWING
+    // -------------------------------------------------
+    function drawGauge(prob) {
+      const W = gauge.width, H = gauge.height;
+      g.clearRect(0, 0, W, H);
+
+      const cx = W / 2, cy = H * 0.9;
+      const r = Math.min(W, H) * 0.75 * 0.5;
+
+      const start = Math.PI;
+      const end = 2 * Math.PI;
+
+      g.lineWidth = 18;
+      g.strokeStyle = '#eee';
+      g.beginPath();
+      g.arc(cx, cy, r, start, end);
+      g.stroke();
+
+      g.strokeStyle = prob < 0.5 ? '#3a7' : '#c33';
+      g.beginPath();
+      g.arc(cx, cy, r, start, start + (end - start) * prob);
+      g.stroke();
+
+      g.lineWidth = 2;
+      g.strokeStyle = '#777';
+
+      for (let i = 0; i <= 10; i++) {
+        const t = start + (end - start) * (i / 10);
+        const x1 = cx + Math.cos(t) * (r + 2);
+        const y1 = cy + Math.sin(t) * (r + 2);
+        const x2 = cx + Math.cos(t) * (r - 16);
+        const y2 = cy + Math.sin(t) * (r - 16);
+        g.beginPath();
+        g.moveTo(x1, y1);
+        g.lineTo(x2, y2);
+        g.stroke();
+      }
+
+      const angle = start + (end - start) * prob;
+      const nx = cx + Math.cos(angle) * (r - 20);
+      const ny = cy + Math.sin(angle) * (r - 20);
+
+      g.lineWidth = 4;
+      g.strokeStyle = '#222';
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.lineTo(nx, ny);
+      g.stroke();
+
+      g.fillStyle = '#222';
+      g.beginPath();
+      g.arc(cx, cy, 6, 0, Math.PI * 2);
+      g.fill();
+
+      g.font = '16px system-ui, Arial';
+      g.textAlign = 'center';
+      g.fillText('NOT SPAM', cx - r + 5, cy - 10);
+      g.fillText('SPAM', cx + r - 5, cy - 10);
+
+      g.font = 'bold 20px system-ui, Arial';
+      const label = prob >= 0.5 ? 'SPAM' : 'NOT SPAM';
+      g.fillStyle = prob >= 0.5 ? '#c33' : '#2c7';
+      g.fillText(`${label} (${prob.toFixed(2)})`, cx, cy - r - 10);
+    }
+
+    // -------------------------------------------------
+    // BAR CHART
+    // -------------------------------------------------
+    function drawBars(found) {
+      const W = bars.width, H = bars.height;
+      b.clearRect(0, 0, W, H);
+
+      const items = found.map(w => ({ w, v: weights[w] }));
+
+      if (items.length === 0) {
+        b.fillStyle = '#444';
+        b.font = '16px system-ui, Arial';
+        b.fillText('No keywords matched.', 16, 24);
+        return;
+      }
+
+      const pad = 40;
+      const barH = 24;
+      const gap = 12;
+      const maxAbs = Math.max(...items.map(o => Math.abs(o.v))) || 1;
+      const scale = (W - pad * 2) / (maxAbs * 2);
+
+      b.strokeStyle = '#aaa';
+      b.beginPath();
+      b.moveTo(W / 2, 10);
+      b.lineTo(W / 2, H - 10);
+      b.stroke();
+
+      b.font = '14px system-ui, Arial';
+
+      items.forEach((o, i) => {
+        const y = pad + i * (barH + gap);
+        const wpx = o.v * scale;
+
+        b.fillStyle = o.v >= 0 ? '#c33' : '#2c7';
+        b.fillRect(W / 2, y, wpx, barH);
+
+        b.fillStyle = '#222';
+        b.fillText(`${o.w} (${o.v})`, 12, y + barH - 6);
+      });
+    }
+
+    // -------------------------------------------------
+    // FIREWORKS (FRONT-LAYER MODE)
+    // -------------------------------------------------
+    const fwCanvas = document.getElementById("fireworks");
+    const fwCtx = fwCanvas.getContext("2d");
+
+    function resizeFireworks() {
+      fwCanvas.width = window.innerWidth;
+      fwCanvas.height = window.innerHeight;
+    }
+    resizeFireworks();
+    window.addEventListener("resize", resizeFireworks);
+
+    let fireworks = [];
+    let particles = [];
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function Firework() {
+      this.x = random(80, fwCanvas.width - 80);
+      this.y = fwCanvas.height;
+      this.targetY = random(80, fwCanvas.height / 2);
+      this.speed = random(4, 7);
+      this.color = `hsl(${random(0, 360)}, 100%, 60%)`;
+      this.exploded = false;
+
+      this.update = function () {
+        this.y -= this.speed;
+        if (this.y <= this.targetY && !this.exploded) {
+          this.exploded = true;
+          explode(this.x, this.y, this.color);
+        }
+      };
+
+      this.draw = function () {
+        fwCtx.beginPath();
+        fwCtx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        fwCtx.fillStyle = this.color;
+        fwCtx.fill();
+      };
+    }
+
+    function Particle(x, y, color) {
+      this.x = x;
+      this.y = y;
+      this.speed = random(1, 6);
+      this.angle = random(0, Math.PI * 2);
+      this.alpha = 1;
+      this.friction = 0.96;
+      this.gravity = 0.05;
+      this.color = color;
+
+      this.update = function () {
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= 0.015;
+      };
+
+      this.draw = function () {
+        fwCtx.save();
+        fwCtx.globalAlpha = this.alpha;
+        fwCtx.beginPath();
+        fwCtx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        fwCtx.fillStyle = this.color;
+        fwCtx.fill();
+        fwCtx.restore();
+      };
+    }
+
+    function explode(x, y, color) {
+      for (let i = 0; i < 70; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    function animateFireworks() {
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+      if (Math.random() < 0.12) {
+        fireworks.push(new Firework());
+      }
+
+      fireworks.forEach((fw, i) => {
+        fw.update();
+        fw.draw();
+        if (fw.exploded) fireworks.splice(i, 1);
+      });
+
+      particles.forEach((p, i) => {
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) particles.splice(i, 1);
+      });
+
+      requestAnimationFrame(animateFireworks);
+    }
+
+    animateFireworks();
+
+    // -------------------------------------------------
+    // UPDATE EVERYTHING ON USER INPUT
+    // -------------------------------------------------
+    function update() {
+      const { prob, found } = scoreMessage(msgEl.value);
+      drawGauge(prob);
+      drawBars(found);
+    }
+
+    msgEl.addEventListener("input", update);
+    update();
+  </script>
+
+</body>
+</html>

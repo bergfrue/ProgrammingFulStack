@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Fireflies</title>
+
+    <style type="text/css">
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        .firefly {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: #ffee88;
+            border-radius: 3px;
+            opacity: 0.8;
+
+            /* XHTML-safe animations */
+            animation: flicker 1.5s alternate infinite;
+        }
+
+        @keyframes drift {
+            0%   { transform: translate(0, 0); }
+            25%  { transform: translate(40px, -60px); }
+            50%  { transform: translate(-40px, 50px); }
+            75%  { transform: translate(60px, 40px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @keyframes flicker {
+            from { opacity: 0.3; }
+            to   { opacity: 1; }
+        }
+    </style>
+
+    <script type="text/javascript">
+    function createFireflies(n) {
+        var body = document.getElementsByTagName("body")[0];
+
+        for (var i = 0; i &lt; n; i++) {
+            var f = document.createElement("div");
+            f.className = "firefly";
+
+            f.style.left = (Math.random() * window.innerWidth) + "px";
+            f.style.top  = (Math.random() * window.innerHeight) + "px";
+
+            f.style.animationDuration =
+                (Math.random() * 6 + 6) + "s";
+
+            body.appendChild(f);
+        }
+    }
+
+    window.onload = function () {
+        createFireflies(40);
+    };
+</script>
+
+
+</head>
+
+<body>
+    <h1>Fireflies Page</h1>
+    <p>Now with XHTML-safe animated fireflies.</p>
+    <p><a href="index.html" style="color: #99ccff;">Return to home</a></p>
+</body>
+
+</html>

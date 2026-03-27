@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Spam Detector – Page 1</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #f2f2f2;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: 60px auto;
+        background: rgba(0, 0, 0, 0.45);
+        padding: 30px;
+        border-radius: 15px;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 32px;
+        letter-spacing: 1px;
+        color: #00eaff;
+        text-shadow: 0 0 6px #00eaff;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 12px;
+        margin-top: 6px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        outline: none;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.4);
+    }
+
+    textarea {
+        height: 170px;
+        resize: vertical;
+    }
+
+    .scorebox {
+        margin-top: 20px;
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-left: 4px solid #00eaff;
+        border-radius: 10px;
+    }
+
+    .score-label {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    #spamScore {
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    #spamLabel {
+        font-size: 20px;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+
+    #spamLabel.spam {
+        background: #ff4d4d;
+        color: white;
+    }
+
+    #spamLabel.ham {
+        background: #2ecc71;
+        color: black;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 25px;
+        border: none;
+        background: #00eaff;
+        color: black;
+        font-size: 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    button:hover {
+        background: #1affa3;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>AI-Powered Spam Detector</h2>
+
+    <form action="spam_insert.php" method="get">
+
+        <!-- Sender Email -->
+        <label for="sender_email">Sender Email</label>
+        <input type="email" id="sender_email" name="sender_email" required>
+
+        <br><br>
+
+        <!-- Subject -->
+        <label for="message_subject">Message Subject</label>
+        <input type="text" id="message_subject" name="message_subject" required>
+
+        <br><br>
+
+        <!-- Body -->
+        <label for="message_body">Message Body</label>
+        <textarea id="message_body" name="message_body" required></textarea>
+
+        <!-- Live Analysis Box -->
+        <div class="scorebox">
+            <div class="score-label">Live Spam Likelihood:</div>
+            <div id="spamScore">0.00</div>
+            <span id="spamLabel" class="ham">NOT SPAM</span>
+        </div>
+
+        <button type="submit">Submit Message</button>
+    </form>
+</div>
+
+<!-- Simple Live Spam Analyzer -->
+<script>
+const weights = {
+    "free": 1.5,
+    "winner": 2.0,
+    "gift": 1.3,
+    "click": 1.2,
+    "urgent": 1.4,
+    "money": 1.0
+};
+
+const msgBox = document.getElementById("message_body");
+const scoreEl = document.getElementById("spamScore");
+const labelEl = document.getElementById("spamLabel");
+
+msgBox.addEventListener("input", () => {
+    let text = msgBox.value.toLowerCase();
+    let score = 0;
+
+    for (const key in weights) {
+        if (text.includes(key)) score += weights[key];
+    }
+
+    let prob = 1 / (1 + Math.exp(-score));
+    scoreEl.textContent = prob.toFixed(2);
+
+    if (prob >= 0.5) {
+        labelEl.textContent = "SPAM";
+        labelEl.className = "spam";
+    } else {
+        labelEl.textContent = "NOT SPAM";
+        labelEl.className = "ham";
+    }
+});
+</script>
+
+</body>
+</html>
